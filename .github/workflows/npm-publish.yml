@@ -28,4 +28,4 @@ jobs:
 
       - name: Run container (example)
         run: |
-          docker run -d --name myapp-p 3000:3000 861550625988.dkr.ecr.ap-south-1.amazonaws.com/nodejs-frontend:1.0
+          docker run -d --name myapp -p 3000:3000 861550625988.dkr.ecr.ap-south-1.amazonaws.com/nodejs-frontend:1.0
