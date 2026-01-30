@@ -1,6 +1,6 @@
 FROM node:22-bullseye-slim 
 WORKDIR /app
-COPY packaje.json .
+COPY package.json .
 RUN npm install
 COPY . .
 RUN npm run build
