@@ -1,0 +1,33 @@
+name: Node Build & Push to ECR
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Node deps
+        run: npm install
+
+      - name: Build Docker image
+        run: |
+          docker build -t 861550625988.dkr.ecr.ap-south-1.amazonaws.com/nodejs-frontend:1.0 .
+
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region ap-south-1 \
+          | docker login --username AWS --password-stdin 861550625988.dkr.ecr.ap-south-1.amazonaws.com
+
+      - name: Push image to ECR
+        run: |
+          docker push 861550625988.dkr.ecr.ap-south-1.amazonaws.com/nodejs-frontend:1.0
+
+      - name: Run container (example)
+        run: |
+          docker run -d --name myapp-p 3000:3000 861550625988.dkr.ecr.ap-south-1.amazonaws.com/nodejs-frontend:1.0
