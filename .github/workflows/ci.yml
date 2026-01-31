@@ -20,30 +20,31 @@ jobs:
           format: "HTML"
           out: "reports"
 
-      # 🟦 INFO: This step fixes your error by deleting hidden newlines
+      # 🟦 INFO: Keeps your URL clean from "invisible" errors
       - name: 🧼 Sanitize Sonar Config
         run: |
-          # Clean the variable and save it to the GitHub Environment
           CLEAN_URL=$(echo "${{ vars.SONAR_HOST_URL }}" | tr -d '\n' | tr -d '\r')
           echo "SONAR_HOST_URL=$CLEAN_URL" >> $GITHUB_ENV
-          
-          # Debug print to confirm it looks correct (masked for safety if needed, but safe for internal IPs)
-          echo "Debug: Cleaned URL is [$CLEAN_URL]"
 
       - name: 🔍 SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v2
         with:
           projectBaseDir: .
+          # 🟢 ADDED: This fixes the "Unknown projectKey" error
+          args: >
+            -Dsonar.projectKey=nodejs-frontend
+            -Dsonar.projectName="NodeJS Frontend"
+            -Dsonar.sources=.
+            -Dsonar.verbose=false
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          # ⚠️ IMPORTANT: Now using the cleaned 'env' variable, not the raw 'vars'
+          # Uses the sanitized URL from the step above
           SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
 
       - name: 🚦 Sonar Quality Gate
         uses: SonarSource/sonarqube-quality-gate-action@v1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          # Also ensure Quality Gate uses the clean URL
           SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
 
       - name: 🐳 Docker Build
