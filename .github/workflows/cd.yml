@@ -1,4 +1,4 @@
-name: CD - Auto Deploy (DEV)
+name: CD - Auto Deploy (PROD)
 
 on:
   workflow_run:
@@ -8,18 +8,25 @@ on:
 
 jobs:
   deploy:
+    name: Deploy to Production
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: self-hosted
 
+    environment:
+      name: prod   # 🔑 must match GitHub Environment name exactly
+
     steps:
-      - name: Login to ECR
+      - name: 🔐 Login to ECR
         run: |
           aws ecr get-login-password --region ap-south-1 \
-          | docker login --username AWS --password-stdin 861550625988.dkr.ecr.ap-south-1.amazonaws.com
+          | docker login --username AWS --password-stdin \
+          861550625988.dkr.ecr.ap-south-1.amazonaws.com
 
-      - name: Deploy
+      - name: 🚀 Deploy Container
         run: |
           docker pull 861550625988.dkr.ecr.ap-south-1.amazonaws.com/nodejs-frontend:${{ github.sha }}
-          docker run -d --name node-app -p 3000:3000 \
-          861550625988.dkr.ecr.ap-south-1.amazonaws.com/nodejs-frontend:${{ github.sha }}
 
+          docker run -d \
+            --name node-app \
+            -p 3000:3000 \
+            861550625988.dkr.ecr.ap-south-1.amazonaws.com/nodejs-frontend:${{ github.sha }}
