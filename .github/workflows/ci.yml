@@ -9,10 +9,10 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout
+      - name: 🐍 Checkout Code
         uses: actions/checkout@v4
 
-      - name: OWASP Dependency Check
+      - name: 🛡️ OWASP Dependency Check
         uses: dependency-check/Dependency-Check_Action@main
         with:
           project: "nodejs-frontend"
@@ -20,24 +20,37 @@ jobs:
           format: "HTML"
           out: "reports"
 
-      - name: SonarQube Scan
+      # 🟦 INFO: This step fixes your error by deleting hidden newlines
+      - name: 🧼 Sanitize Sonar Config
+        run: |
+          # Clean the variable and save it to the GitHub Environment
+          CLEAN_URL=$(echo "${{ vars.SONAR_HOST_URL }}" | tr -d '\n' | tr -d '\r')
+          echo "SONAR_HOST_URL=$CLEAN_URL" >> $GITHUB_ENV
+          
+          # Debug print to confirm it looks correct (masked for safety if needed, but safe for internal IPs)
+          echo "Debug: Cleaned URL is [$CLEAN_URL]"
+
+      - name: 🔍 SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v2
         with:
           projectBaseDir: .
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+          # ⚠️ IMPORTANT: Now using the cleaned 'env' variable, not the raw 'vars'
+          SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
 
-      - name: Sonar Quality Gate
+      - name: 🚦 Sonar Quality Gate
         uses: SonarSource/sonarqube-quality-gate-action@v1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          # Also ensure Quality Gate uses the clean URL
+          SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
 
-      - name: Docker Build
+      - name: 🐳 Docker Build
         run: |
           docker build -t 861550625988.dkr.ecr.ap-south-1.amazonaws.com/nodejs-frontend:${{ github.sha }} .
 
-      - name: Trivy Image Scan
+      - name: 🛡️ Trivy Image Scan
         uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: 861550625988.dkr.ecr.ap-south-1.amazonaws.com/nodejs-frontend:${{ github.sha }}
@@ -45,12 +58,12 @@ jobs:
           exit-code: 1
           ignore-unfixed: true
 
-      - name: Login to ECR
+      - name: ☁️ Login to ECR
         run: |
           aws ecr get-login-password --region ap-south-1 \
           | docker login --username AWS --password-stdin \
           861550625988.dkr.ecr.ap-south-1.amazonaws.com
 
-      - name: Push Image
+      - name: 🚀 Push Image
         run: |
           docker push 861550625988.dkr.ecr.ap-south-1.amazonaws.com/nodejs-frontend:${{ github.sha }}
