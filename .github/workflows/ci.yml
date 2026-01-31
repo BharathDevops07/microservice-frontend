@@ -20,7 +20,7 @@ jobs:
           format: "HTML"
           out: "reports"
 
-      # 🟦 INFO: Keeps your URL clean from "invisible" errors
+      # 🟦 INFO: Strips hidden newlines/spaces from the URL variable
       - name: 🧼 Sanitize Sonar Config
         run: |
           CLEAN_URL=$(echo "${{ vars.SONAR_HOST_URL }}" | tr -d '\n' | tr -d '\r')
@@ -30,15 +30,15 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v2
         with:
           projectBaseDir: .
-          # 🟢 ADDED: This fixes the "Unknown projectKey" error
+          # 🟢 FIXED: Removed spaces in projectName to prevent parsing errors
           args: >
             -Dsonar.projectKey=nodejs-frontend
-            -Dsonar.projectName="NodeJS Frontend"
+            -Dsonar.projectName=NodeJS-Frontend
             -Dsonar.sources=.
             -Dsonar.verbose=false
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          # Uses the sanitized URL from the step above
+          # Uses the clean URL from the sanitizer step
           SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
 
       - name: 🚦 Sonar Quality Gate
