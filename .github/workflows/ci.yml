@@ -3,7 +3,6 @@ name: CI - DevSecOps
 on:
   push:
     branches: [ main ]
-  pull_request:
 
 jobs:
   ci:
@@ -13,7 +12,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 🔐 DEPENDENCY SECURITY (SCA)
       - name: OWASP Dependency Check
         uses: dependency-check/Dependency-Check_Action@main
         with:
@@ -22,25 +20,23 @@ jobs:
           format: "HTML"
           out: "reports"
 
-      # 🔐 CODE SECURITY (SAST)
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v2
+        with:
+          projectBaseDir: .
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
 
-      # 🟥 SECURITY GATE (BLOCK PIPELINE)
       - name: Sonar Quality Gate
         uses: SonarSource/sonarqube-quality-gate-action@v1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      # 🐳 BUILD IMAGE
       - name: Docker Build
         run: |
           docker build -t 861550625988.dkr.ecr.ap-south-1.amazonaws.com/nodejs-frontend:${{ github.sha }} .
 
-      # 🔐 IMAGE SECURITY
       - name: Trivy Image Scan
         uses: aquasecurity/trivy-action@0.24.0
         with:
@@ -49,13 +45,12 @@ jobs:
           exit-code: 1
           ignore-unfixed: true
 
-      # ☁️ PUSH ONLY IF SECURE
       - name: Login to ECR
         run: |
           aws ecr get-login-password --region ap-south-1 \
-          | docker login --username AWS --password-stdin 861550625988.dkr.ecr.ap-south-1.amazonaws.com
+          | docker login --username AWS --password-stdin \
+          861550625988.dkr.ecr.ap-south-1.amazonaws.com
 
       - name: Push Image
         run: |
           docker push 861550625988.dkr.ecr.ap-south-1.amazonaws.com/nodejs-frontend:${{ github.sha }}
-
